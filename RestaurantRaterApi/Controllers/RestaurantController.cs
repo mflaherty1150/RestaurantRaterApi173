@@ -20,14 +20,22 @@ public class RestaurantController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetRestaurantsAsync()
     {
-        List<Restaurant> restaurants = await _context.Restaurants.ToListAsync();
-        return Ok(restaurants);
+        List<Restaurant> restaurants = await _context.Restaurants.Include(r => r.Ratings).ToListAsync();
+        List<RestaurantListItem> restaurantList = restaurants.Select(r => new RestaurantListItem()
+            {
+                Id = r.Id,
+                Name = r.Name,
+                Location = r.Location,
+                AverageScore = r.AverageRating,
+            }).ToList();
+
+        return Ok(restaurantList);
     }
 
     [HttpGet("id:int")] // https://localhost7129/Restaurant/1
     public async Task<IActionResult> GetRestaurantByIdAsync(int id)
     {
-        Restaurant? restaurant = await _context.Restaurants.FindAsync(id);
+        Restaurant? restaurant = await _context.Restaurants.Include(r => r.Ratings).FirstOrDefaultAsync(r => r.Id == id);
 
         if (restaurant is null) 
             return NotFound();
